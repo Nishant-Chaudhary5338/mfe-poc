@@ -1,0 +1,16 @@
+{
+  "name": "mfe-poc",
+  "private": true,
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "preview": "turbo run preview",
+    "build:mfe": "turbo run build --filter=sms --filter=qca --filter=cms --filter=mam",
+    "preview:mfe": "turbo run preview --filter=sms --filter=qca --filter=cms --filter=mam",
+    "dev:shell": "turbo run dev --filter=shell"
+  },
+  "devDependencies": {
+    "turbo": "^2.8.20"
+  },
+  "packageManager": "pnpm@8.15.6"
+}

@@ -1,0 +1,70 @@
+{
+  "App-DycX3Nsi.js": {
+    "size": 3612,
+    "md5": "d90c101847abefcbc9ea1b0ccd561b54"
+  },
+  "Compose-DwSMg6Gz.js": {
+    "size": 1795,
+    "md5": "9f6ec6d7d9eb3cbeba7ac3e724165115"
+  },
+  "Inbox-CX918uod.js": {
+    "size": 1545,
+    "md5": "a0ef0676086d3066944645033d73b971"
+  },
+  "Sent-XVUNmOyO.js": {
+    "size": 1090,
+    "md5": "2543cf08bea76ab199e3b54cd99af5ba"
+  },
+  "Settings-BcZEbVf8.js": {
+    "size": 1758,
+    "md5": "7217fb85b90995b38f33b4420bd69224"
+  },
+  "__federation_expose_App-UVd8N1Ss.js": {
+    "size": 73,
+    "md5": "b799c30b0a3b2c9f14d43545b0cd2de8"
+  },
+  "__federation_fn_import-BVi0bQK0.js": {
+    "size": 246,
+    "md5": "12f0029ea057ade0513344f73b1b0bae"
+  },
+  "__federation_shared_react-BGHs33WT.js": {
+    "size": 90,
+    "md5": "4ce4b337e636618cd69a38c8389f16ed"
+  },
+  "__federation_shared_react-dom-Cfvu5Je3.js": {
+    "size": 102,
+    "md5": "9879e399352dad0935be95a79e77d06b"
+  },
+  "__federation_shared_react-router-dom-C9k0CRH9.js": {
+    "size": 392309,
+    "md5": "7c51a668c703c9a81357a629df7939c2"
+  },
+  "_virtual___federation_fn_import-CK64xOoA.js": {
+    "size": 12405,
+    "md5": "e82fcbe7f9aec8f864d4107db47d3a56"
+  },
+  "chunk-CdLPSaO0.js": {
+    "size": 179,
+    "md5": "d22a134217efa25534413bd4a2ac0013"
+  },
+  "index-D-7mkJ4H.js": {
+    "size": 464081,
+    "md5": "f2044564aa3e7b32b17349cc1b96bb21"
+  },
+  "preload-helper-t9NyTnoX.js": {
+    "size": 2113,
+    "md5": "c14033c03dfdb3461356db5cc1cc05ee"
+  },
+  "react-B9NMl48p.js": {
+    "size": 15666,
+    "md5": "5da2631a09488b58c82779104d328814"
+  },
+  "react-dom-BRGPy-Q5.js": {
+    "size": 6668,
+    "md5": "78babc2d51b3dc3fa7784de7e7ea967a"
+  },
+  "shared-ui-Dd7W0wJP.js": {
+    "size": 2145,
+    "md5": "88b9a54882fb7b1cf55debe47ce6e7b3"
+  }
+}

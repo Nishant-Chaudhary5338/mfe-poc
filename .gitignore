@@ -1,4 +1,39 @@
-node_modules
-dist
-.turbo
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build outputs
+dist/
+build/
+.vite/
+
+# DevTools snapshots (machine-local, regenerated on each build — do not commit)
+scripts/snapshot-*.json
+
+# Deployed preview builds (local only)
+deploys/
+
+# Environment
+.env
+.env.local
 *.local
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Editor
+.vscode/settings.json
+.idea/
+
+# TypeScript
+*.tsbuildinfo
+
+# Turbo
+.turbo/

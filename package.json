@@ -1,16 +1,19 @@
 {
   "name": "mfe-poc",
   "private": true,
+  "type": "module",
   "scripts": {
-    "dev": "turbo run dev",
-    "build": "turbo run build",
-    "preview": "turbo run preview",
-    "build:mfe": "turbo run build --filter=sms --filter=qca --filter=cms --filter=mam",
-    "preview:mfe": "turbo run preview --filter=sms --filter=qca --filter=cms --filter=mam",
-    "dev:shell": "turbo run dev --filter=shell"
-  },
-  "devDependencies": {
-    "turbo": "^2.8.20"
-  },
-  "packageManager": "pnpm@8.15.6"
+    "dev": "pnpm build:mfe && (pnpm preview:remotes & pnpm dev:shell)",
+    "build": "pnpm -r build",
+    "preview": "pnpm --parallel -r preview",
+    "build:mfe": "pnpm --filter sms --filter qca --filter cms --filter mam build",
+    "preview:remotes": "pnpm --parallel --filter sms --filter qca --filter cms --filter mam preview",
+    "dev:shell": "pnpm --filter shell dev",
+    "typecheck": "pnpm -r typecheck",
+    "snapshot": "node scripts/snapshot.js",
+    "compare": "node scripts/compare.js",
+    "serve:deploys": "node scripts/serve-deploys.js",
+    "verify": "node scripts/verify-network.js",
+    "devtools": "node devtools/server.js & pnpm --filter devtools-client dev"
+  }
 }

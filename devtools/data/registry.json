@@ -1,0 +1,22 @@
+[
+  {
+    "id": "sms",
+    "label": "Smart Monitoring System",
+    "url": "http://localhost:3001/assets/remoteEntry.js"
+  },
+  {
+    "id": "qca",
+    "label": "QC Automation",
+    "url": "http://localhost:3002/assets/remoteEntry.js"
+  },
+  {
+    "id": "cms",
+    "label": "Content Management System",
+    "url": "http://localhost:3003/assets/remoteEntry.js"
+  },
+  {
+    "id": "mam",
+    "label": "Media Asset Management",
+    "url": "http://localhost:3004/assets/remoteEntry.js"
+  },
+]

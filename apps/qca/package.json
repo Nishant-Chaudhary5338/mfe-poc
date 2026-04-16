@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite --port 3002",
     "build": "vite build",
-    "preview": "vite preview --port 3002"
+    "preview": "vite preview --port 3002",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@repo/shared-ui": "workspace:*",
@@ -16,7 +17,10 @@
   },
   "devDependencies": {
     "@originjs/vite-plugin-federation": "^1.4.1",
-    "@vitejs/plugin-react": "^4.4.1",
-    "vite": "^6.3.5"
+    "@types/react": "^19.1.0",
+    "@types/react-dom": "^19.1.0",
+    "@vitejs/plugin-react": "^6.0.1",
+    "typescript": "^5.8.3",
+    "vite": "^8.0.0"
   }
 }

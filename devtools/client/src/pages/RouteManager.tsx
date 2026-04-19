@@ -33,6 +33,8 @@ export default function RouteManager() {
   const [showCode, setShowCode] = useState(false);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<{ success: boolean; routeFile?: string; path?: string; error?: string; generatedCode?: string; tableMode?: boolean } | null>(null);
+  const [deletingRoute, setDeletingRoute] = useState<string | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
 
   useEffect(() => {
     fetch('/api/apps').then(r => r.json()).then(setApps).catch(console.error);
@@ -86,6 +88,26 @@ export default function RouteManager() {
       setResult({ success: false, error: String(e) });
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function handleDelete(routeName: string) {
+    setDeletingRoute(routeName);
+    try {
+      const res = await fetch('/api/route', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ appId: selectedApp, routeName }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Delete failed');
+      toast.success('Route deleted', `${routeName} removed from ${selectedApp}`);
+      setExistingRoutes(r => r.filter(x => x !== routeName));
+    } catch (err) {
+      toast.error('Delete failed', String(err));
+    } finally {
+      setDeletingRoute(null);
+      setConfirmDelete(null);
     }
   }
 
@@ -203,10 +225,37 @@ export default function RouteManager() {
               </h2>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
                 {existingRoutes.map(r => (
-                  <span key={r} style={{
-                    padding: '6px 14px', borderRadius: 20, fontSize: 12, fontWeight: 600,
-                    background: color + '15', color: color, border: `1px solid ${color}30`,
-                  }}>{r}</span>
+                  <div key={r} style={{
+                    display: 'flex', alignItems: 'center', gap: 4,
+                    padding: '4px 6px 4px 12px', borderRadius: 20, fontSize: 12, fontWeight: 600,
+                    background: color + '15', color, border: `1px solid ${color}30`,
+                  }}>
+                    <span>{r}</span>
+                    <PermissionGate roles={['admin', 'ops', 'editor']} mode="hide">
+                      {confirmDelete === r ? (
+                        <>
+                          <span style={{ fontSize: 10, color: '#DC2626', marginLeft: 4 }}>Remove?</span>
+                          <button
+                            onClick={() => handleDelete(r)}
+                            disabled={!!deletingRoute}
+                            title="Confirm delete"
+                            style={{ marginLeft: 2, width: 18, height: 18, borderRadius: '50%', border: 'none', background: '#DC2626', color: 'white', fontSize: 10, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}
+                          >{deletingRoute === r ? '…' : '✓'}</button>
+                          <button
+                            onClick={() => setConfirmDelete(null)}
+                            title="Cancel"
+                            style={{ width: 18, height: 18, borderRadius: '50%', border: 'none', background: 'var(--border)', color: 'var(--muted)', fontSize: 10, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}
+                          >✕</button>
+                        </>
+                      ) : (
+                        <button
+                          onClick={() => setConfirmDelete(r)}
+                          title="Delete route"
+                          style={{ width: 18, height: 18, borderRadius: '50%', border: 'none', background: 'transparent', color: color, fontSize: 13, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, opacity: 0.5, lineHeight: 1 }}
+                        >×</button>
+                      )}
+                    </PermissionGate>
+                  </div>
                 ))}
                 {existingRoutes.length === 0 && <p style={{ color: 'var(--muted)', fontSize: 13 }}>No routes found</p>}
               </div>

@@ -1,6 +1,6 @@
 import express from 'express';
 import cors from 'cors';
-import { readFileSync, writeFileSync, existsSync, mkdirSync, readdirSync, statSync, copyFileSync, rmSync } from 'fs';
+import { readFileSync, writeFileSync, existsSync, mkdirSync, readdirSync, statSync, copyFileSync, rmSync, unlinkSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { createHash } from 'crypto';
@@ -674,6 +674,38 @@ app.post('/api/route/add', (req, res) => {
       generatedCode: routeTsx,
       tableMode: useTable,
     });
+  } catch (err) {
+    res.status(500).json({ error: String(err) });
+  }
+});
+
+// ─── Delete Route ────────────────────────────────────────────────────────────
+
+app.delete('/api/route', (req, res) => {
+  const { appId, routeName } = req.body;
+  if (!appId || !routeName) return res.status(400).json({ error: 'appId, routeName required' });
+
+  const appDir = join(ROOT, 'apps', appId);
+  const routeFile = join(appDir, 'src', 'routes', `${routeName}.tsx`);
+  if (!existsSync(routeFile)) return res.status(404).json({ error: `Route ${routeName} not found` });
+
+  try {
+    const appTsxPath = join(appDir, 'src', 'App.tsx');
+    let src = readFileSync(appTsxPath, 'utf8');
+    const Name = cap(routeName);
+    const rPath = `/${routeName.toLowerCase()}`;
+
+    // Remove lazy import line
+    src = src.replace(new RegExp(`\\nconst ${Name}\\s*=\\s*lazy\\(\\(\\)\\s*=>\\s*import\\(['"]\\./routes/${routeName}\\.tsx['"]\\)\\);`), '');
+    // Remove navItem entry (handles trailing comma)
+    src = src.replace(new RegExp(`\\n?\\s*\\{[^}]*path:\\s*['"]${rPath}['"][^}]*\\},?`), '');
+    // Remove Route JSX element
+    src = src.replace(new RegExp(`\\n?\\s*<Route\\s+path=['"]${rPath}['"]\\s+element=\\{<${Name}\\s*\\/>\\}\\s*\\/>`) , '');
+
+    writeFileSync(appTsxPath, src);
+    unlinkSync(routeFile);
+
+    res.json({ success: true, removed: routeName });
   } catch (err) {
     res.status(500).json({ error: String(err) });
   }

@@ -720,8 +720,8 @@ app.post('/api/build', (req, res) => {
   res.setHeader('Connection', 'keep-alive');
 
   const args = appId === 'all'
-    ? ['--filter', 'sms', '--filter', 'qca', '--filter', 'cms', '--filter', 'mam', 'build']
-    : ['--filter', appId, 'build'];
+    ? ['build', '--filter=sms', '--filter=qca', '--filter=cms', '--filter=mam']
+    : ['build', `--filter=${appId}`];
 
   const send = (type, line) => res.write(`data: ${JSON.stringify({ type, line })}\n\n`);
 
@@ -731,7 +731,7 @@ app.post('/api/build', (req, res) => {
 
   send('stdout', `Building ${appId === 'all' ? 'all remotes' : appId}...\n`);
 
-  const proc = spawn('pnpm', args, { cwd: ROOT, shell: true });
+  const proc = spawn('turbo', args, { cwd: ROOT, shell: true });
   proc.stdout.on('data', d => send('stdout', d.toString()));
   proc.stderr.on('data', d => send('stderr', d.toString()));
   proc.on('close', code => {

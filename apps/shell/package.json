@@ -10,6 +10,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@repo/auth": "workspace:*",
     "@repo/shared-ui": "workspace:*",
     "react": "^19.2.4",
     "react-dom": "^19.2.4"
@@ -20,6 +21,8 @@
     "@types/react-dom": "^19.1.0",
     "@vitejs/plugin-react": "^6.0.1",
     "typescript": "^5.8.3",
-    "vite": "^8.0.0"
+    "vite": "^8.0.0",
+    "@tailwindcss/vite": "^4.1.5",
+    "tailwindcss": "^4.1.5"
   }
 }

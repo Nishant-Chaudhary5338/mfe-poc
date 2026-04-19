@@ -1,4 +1,7 @@
 import { useState, useEffect } from 'react';
+import { useDevAuth } from '../devAuth.tsx';
+import { PermissionGate } from '../components/PermissionGate.tsx';
+import { useToast } from '../components/Toast.tsx';
 
 const inputStyle = {
   width: '100%', padding: '10px 14px',
@@ -24,8 +27,12 @@ export default function RouteManager() {
   const [existingRoutes, setExistingRoutes] = useState<string[]>([]);
   const [routeName, setRouteName] = useState('');
   const [routePath, setRoutePath] = useState('');
+  const [endpoint, setEndpoint] = useState('');
+  const [columns, setColumns] = useState('');
+  const [description, setDescription] = useState('');
+  const [showCode, setShowCode] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<{ success: boolean; routeFile?: string; path?: string; error?: string } | null>(null);
+  const [result, setResult] = useState<{ success: boolean; routeFile?: string; path?: string; error?: string; generatedCode?: string; tableMode?: boolean } | null>(null);
 
   useEffect(() => {
     fetch('/api/apps').then(r => r.json()).then(setApps).catch(console.error);
@@ -46,17 +53,34 @@ export default function RouteManager() {
     setLoading(true);
     setResult(null);
     try {
+      let parsedColumns: any[] | undefined;
+      if (columns.trim()) {
+        try { parsedColumns = JSON.parse(columns); }
+        catch { toast.error('Invalid columns JSON', 'Check the Columns field format'); setLoading(false); return; }
+      }
       const res = await fetch('/api/route/add', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ appId: selectedApp, name: routeName, path: routePath }),
+        body: JSON.stringify({
+          appId: selectedApp, name: routeName, path: routePath,
+          endpoint: endpoint || undefined,
+          columns: parsedColumns,
+          description: description || undefined,
+        }),
       });
       const data = await res.json();
       setResult(data);
       if (data.success) {
         setExistingRoutes(r => [...r, routeName]);
+        toast.success('Route added', `${routeName} added to ${selectedApp}`);
         setRouteName('');
         setRoutePath('');
+        setEndpoint('');
+        setColumns('');
+        setDescription('');
+        setShowCode(false);
+      } else {
+        toast.error('Failed to add route', data.error ?? 'Unknown error');
       }
     } catch (e) {
       setResult({ success: false, error: String(e) });
@@ -65,13 +89,23 @@ export default function RouteManager() {
     }
   }
 
+  const toast = useToast();
+  const { user } = useDevAuth();
+  const isReadOnly = user?.role === 'viewer';
   const color = appColors[selectedApp] || '#546BE8';
 
   return (
     <div>
-      <div style={{ marginBottom: 32 }}>
-        <h1 style={{ fontFamily: 'var(--font-head)', fontSize: 28, fontWeight: 800, color: 'var(--text)', margin: 0, letterSpacing: '-0.02em' }}>Route Manager</h1>
-        <p style={{ color: 'var(--muted)', fontSize: 14, marginTop: 6 }}>Add new routes to existing plugins</p>
+      <div style={{ marginBottom: 32, display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16 }}>
+        <div>
+          <h1 style={{ fontFamily: 'var(--font-head)', fontSize: 28, fontWeight: 800, color: 'var(--text)', margin: 0, letterSpacing: '-0.02em' }}>Route Manager</h1>
+          <p style={{ color: 'var(--muted)', fontSize: 14, marginTop: 6 }}>Add new routes to existing plugins</p>
+        </div>
+        {isReadOnly && (
+          <span style={{ fontSize: 11, fontWeight: 600, padding: '5px 12px', borderRadius: 8, background: '#FFFBEB', color: '#92400E', border: '1px solid #FDE68A', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: 6 }}>
+            🔒 Read-only — cannot add routes
+          </span>
+        )}
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
@@ -111,18 +145,50 @@ export default function RouteManager() {
               <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                 <div>
                   <label style={labelStyle}>Route Name</label>
-                  <input style={inputStyle} placeholder="e.g. Archive" value={routeName} onChange={e => setRouteName(e.target.value)} />
+                  <input style={inputStyle} placeholder="e.g. Articles" value={routeName} onChange={e => setRouteName(e.target.value)} />
                 </div>
                 <div>
                   <label style={labelStyle}>Route Path</label>
-                  <input style={inputStyle} placeholder="/archive" value={routePath} onChange={e => setRoutePath(e.target.value)} />
+                  <input style={inputStyle} placeholder="/articles" value={routePath} onChange={e => setRoutePath(e.target.value)} />
                 </div>
-                <button onClick={handleAdd} disabled={loading || !routeName} style={{
-                  padding: '11px 20px', borderRadius: 8, fontSize: 13, fontWeight: 700,
-                  background: loading ? 'var(--border)' : color,
-                  color: 'white', border: 'none', cursor: loading ? 'not-allowed' : 'pointer',
-                  fontFamily: 'var(--font-head)',
-                }}>{loading ? 'Adding...' : 'Add Route'}</button>
+
+                {/* ── API Data Table (optional) ── */}
+                <div style={{ borderTop: '1px solid var(--border)', paddingTop: 14 }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 12 }}>
+                    API Data Table <span style={{ fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}>— optional</span>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                    <div>
+                      <label style={labelStyle}>Endpoint URL</label>
+                      <input style={inputStyle} placeholder="http://localhost:5001/api/mock/articles" value={endpoint} onChange={e => setEndpoint(e.target.value)} />
+                    </div>
+                    <div>
+                      <label style={labelStyle}>Description</label>
+                      <input style={inputStyle} placeholder="Content articles with status and tags" value={description} onChange={e => setDescription(e.target.value)} />
+                    </div>
+                    <div>
+                      <label style={labelStyle}>Columns (JSON)</label>
+                      <textarea
+                        style={{ ...inputStyle, height: 120, resize: 'vertical', fontFamily: 'var(--font-mono)', fontSize: 11, lineHeight: 1.5 }}
+                        placeholder={`[\n  { "key": "title", "label": "Title", "type": "text", "bold": true },\n  { "key": "status", "label": "Status", "type": "badge" },\n  { "key": "createdAt", "label": "Created", "type": "date" },\n  { "key": "tags", "label": "Tags", "type": "tags" }\n]`}
+                        value={columns}
+                        onChange={e => setColumns(e.target.value)}
+                      />
+                      <p style={{ fontSize: 10, color: 'var(--muted)', margin: '4px 0 0' }}>
+                        types: <code style={{ fontFamily: 'var(--font-mono)' }}>text</code> · <code style={{ fontFamily: 'var(--font-mono)' }}>badge</code> · <code style={{ fontFamily: 'var(--font-mono)' }}>date</code> · <code style={{ fontFamily: 'var(--font-mono)' }}>tags</code>
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <PermissionGate roles={['admin', 'ops', 'editor']} mode="disable" style={{ display: 'block' }}>
+                  <button onClick={handleAdd} disabled={loading || !routeName} style={{
+                    width: '100%', padding: '11px 20px', borderRadius: 8, fontSize: 13, fontWeight: 700,
+                    background: loading ? 'var(--border)' : color,
+                    color: 'white', border: 'none', cursor: loading ? 'not-allowed' : 'pointer',
+                    fontFamily: 'var(--font-head)',
+                  }}>{loading ? 'Adding…' : endpoint ? 'Generate Table Route' : 'Add Route'}</button>
+                </PermissionGate>
               </div>
             </div>
           )}
@@ -160,10 +226,34 @@ export default function RouteManager() {
                 </span>
               </div>
               {result.success ? (
-                <div style={{ fontSize: 12, fontFamily: 'var(--font-mono)', color: 'var(--muted)', lineHeight: 1.8 }}>
-                  <div style={{ color: '#059669' }}>+ {result.routeFile}</div>
-                  <div style={{ color: 'var(--muted)', marginTop: 4 }}>~ App.tsx patched — lazy import, NavLink, Route added</div>
-                  <div style={{ color: 'var(--muted)' }}>~ Path: {result.path}</div>
+                <div>
+                  <div style={{ fontSize: 12, fontFamily: 'var(--font-mono)', color: 'var(--muted)', lineHeight: 1.8 }}>
+                    <div style={{ color: '#059669' }}>+ {result.routeFile}</div>
+                    <div style={{ color: 'var(--muted)', marginTop: 4 }}>~ App.tsx patched — lazy import, NavLink, Route added</div>
+                    <div style={{ color: 'var(--muted)' }}>~ Path: {result.path}</div>
+                    {result.tableMode && <div style={{ color: '#059669', marginTop: 4 }}>⚡ Generated with API data table</div>}
+                  </div>
+                  {result.generatedCode && (
+                    <div style={{ marginTop: 14 }}>
+                      <button
+                        onClick={() => setShowCode(v => !v)}
+                        style={{
+                          fontSize: 11, fontWeight: 600, padding: '4px 12px', borderRadius: 6,
+                          background: 'rgba(5,150,105,0.1)', color: '#059669',
+                          border: '1px solid rgba(5,150,105,0.25)', cursor: 'pointer',
+                        }}
+                      >{showCode ? 'Hide generated code' : 'View generated code'}</button>
+                      {showCode && (
+                        <pre style={{
+                          marginTop: 10, padding: 14, borderRadius: 8,
+                          background: '#0D1020', color: '#A5F3FC',
+                          fontSize: 10, lineHeight: 1.6, overflowX: 'auto',
+                          fontFamily: 'var(--font-mono)', maxHeight: 420,
+                          border: '1px solid rgba(165,243,252,0.12)',
+                        }}>{result.generatedCode}</pre>
+                      )}
+                    </div>
+                  )}
                 </div>
               ) : (
                 <p style={{ color: '#DC2626', fontSize: 13, fontFamily: 'var(--font-mono)' }}>{result.error}</p>

@@ -1,0 +1,19 @@
+{
+  "mcpServers": {
+    "ixd-generator": {
+      "type": "stdio",
+      "command": "node",
+      "args": [
+        "/Users/nishantchaudhary/Desktop/my-turborepo/tools/ixd-generator/build/ixd-generator/src/index.js"
+      ]
+    },
+    "memory": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-memory"],
+      "env": {
+        "MEMORY_FILE_PATH": "/Users/nishantchaudhary/.claude/projects/-Users-nishantchaudhary-Developer-mfe-poc/memory/memory-graph.json"
+      }
+    }
+  }
+}

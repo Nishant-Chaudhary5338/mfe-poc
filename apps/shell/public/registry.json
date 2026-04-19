@@ -1,6 +1,6 @@
 [
-  { "id": "sms", "label": "SMS", "url": "http://localhost:3001/assets/remoteEntry.js" },
-  { "id": "qca", "label": "QCA", "url": "http://localhost:3002/assets/remoteEntry.js" },
-  { "id": "cms", "label": "CMS", "url": "http://localhost:3003/assets/remoteEntry.js" },
-  { "id": "mam", "label": "MAM", "url": "http://localhost:3004/assets/remoteEntry.js" }
+  { "id": "sms", "label": "SMS", "url": "http://localhost:3001/assets/remoteEntry.js", "requiredRoles": ["admin", "ops", "viewer"] },
+  { "id": "qca", "label": "QCA", "url": "http://localhost:3002/assets/remoteEntry.js", "requiredRoles": ["admin", "ops", "viewer"] },
+  { "id": "cms", "label": "CMS", "url": "http://localhost:3003/assets/remoteEntry.js", "requiredRoles": ["admin", "editor", "viewer"] },
+  { "id": "mam", "label": "MAM", "url": "http://localhost:3004/assets/remoteEntry.js", "requiredRoles": ["admin", "editor", "viewer"] }
 ]

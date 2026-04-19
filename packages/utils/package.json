@@ -1,0 +1,20 @@
+{
+  "name": "@repo/utils",
+  "version": "0.0.0",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./string": "./src/string/index.ts",
+    "./api": "./src/api/index.ts",
+    "./validation": "./src/validation/index.ts",
+    "./pagination": "./src/pagination/index.ts",
+    "./error": "./src/error/index.ts"
+  },
+  "dependencies": {
+    "zod": "^3.23.8"
+  },
+  "peerDependencies": {
+    "react": ">=18",
+    "react-dom": ">=18"
+  }
+}

@@ -1,11 +1,13 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+import tailwindcss from '@tailwindcss/vite';
 import federation from '@originjs/vite-plugin-federation';
 
 export default defineConfig({
   base: 'http://localhost:3003/',
   plugins: [
     react(),
+    tailwindcss(),
     federation({
       name: 'cms',
       filename: 'remoteEntry.js',

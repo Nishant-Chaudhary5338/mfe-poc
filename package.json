@@ -3,17 +3,19 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "pnpm build:mfe && (pnpm preview:remotes & pnpm dev:shell)",
+    "dev": "(lsof -ti:3000,3001,3002,3003,3004 | xargs kill -9 2>/dev/null || true) && pnpm build:mfe && (pnpm preview:remotes & pnpm dev:shell)",
     "build": "pnpm -r build",
     "preview": "pnpm --parallel -r preview",
-    "build:mfe": "pnpm --filter sms --filter qca --filter cms --filter mam build",
-    "preview:remotes": "pnpm --parallel --filter sms --filter qca --filter cms --filter mam preview",
+    "build:mfe": "node scripts/dev-remotes.js build",
+    "preview:remotes": "node scripts/dev-remotes.js preview",
     "dev:shell": "pnpm --filter shell dev",
     "typecheck": "pnpm -r typecheck",
     "snapshot": "node scripts/snapshot.js",
     "compare": "node scripts/compare.js",
     "serve:deploys": "node scripts/serve-deploys.js",
     "verify": "node scripts/verify-network.js",
-    "devtools": "node devtools/server.js & pnpm --filter devtools-client dev"
+    "devtools": "(lsof -ti:5001 | xargs kill -9 2>/dev/null || true) && node devtools/server.js & pnpm --filter devtools-client dev",
+    "test:e2e": "pnpm --filter devtools-client test:e2e",
+    "verify:generators": "bash scripts/verify-generators.sh"
   }
 }

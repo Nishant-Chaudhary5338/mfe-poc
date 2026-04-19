@@ -37,3 +37,20 @@ Desktop.ini
 
 # Turbo
 .turbo/
+
+# MFE Explainer (WIP, not for sharing)
+apps/mfe-explainer/
+mfe-explainer.html
+
+# Local AI assistant files
+.claude/
+memory.json
+
+# Local dev session
+devtools/data/dev-session.json
+
+# Generated test/lighthouse reports
+devtools/client/playwright-report/
+devtools/client/test-results/
+devtools/data/lh-report-*.json
+devtools/data/lighthouse-*.json

@@ -2,9 +2,10 @@
   "name": "mfe-poc",
   "private": true,
   "type": "module",
+  "packageManager": "pnpm@10.32.1",
   "scripts": {
     "dev": "(lsof -ti:3000,3001,3002,3003,3004 | xargs kill -9 2>/dev/null || true) && pnpm build:mfe && (pnpm preview:remotes & pnpm dev:shell)",
-    "build": "pnpm -r build",
+    "build": "turbo build",
     "preview": "pnpm --parallel -r preview",
     "build:mfe": "node scripts/dev-remotes.js build",
     "preview:remotes": "node scripts/dev-remotes.js preview",
@@ -17,5 +18,8 @@
     "devtools": "(lsof -ti:5001 | xargs kill -9 2>/dev/null || true) && node devtools/server.js & pnpm --filter devtools-client dev",
     "test:e2e": "pnpm --filter devtools-client test:e2e",
     "verify:generators": "bash scripts/verify-generators.sh"
+  },
+  "devDependencies": {
+    "turbo": "^2.9.6"
   }
 }

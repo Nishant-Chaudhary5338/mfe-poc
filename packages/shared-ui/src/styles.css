@@ -1,4 +1,4 @@
-@import "tailwindcss";
+/* shadcn/ui token layer — apps provide @import "tailwindcss" in their own src/index.css */
 
 /* ==========================================================================
    shadcn/ui New York Design System

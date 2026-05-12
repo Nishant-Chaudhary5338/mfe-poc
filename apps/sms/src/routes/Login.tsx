@@ -1,70 +1,77 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Button, Input, Label, Alert, AlertDescription } from '@repo/shared-ui';
+import { useState } from 'react';
+import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Input, Label } from '@repo/ui';
+import { loginAsync } from '../store/authSlice';
+import { useAppDispatch, useAppSelector } from '../store/index';
 
-export default function LoginPage() {
-  const navigate = useNavigate();
-  const [form, setForm] = useState({ email: '', password: '' });
-  const [error, setError] = useState(null);
-  const [loading, setLoading] = useState(false);
+export default function Login() {
+  const dispatch = useAppDispatch();
+  const { loading, error } = useAppSelector(s => s.auth);
+  const [email, setEmail]     = useState('alice@tvplus.com');
+  const [password, setPassword] = useState('password123');
 
-  useEffect(() => {
-    if (localStorage.getItem('auth_token')) navigate('/');
-  }, [navigate]);
-
-  async function handleSubmit(e) {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
-    setLoading(true);
-    try {
-      const res = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
-      });
-      if (!res.ok) {
-        const d = await res.json().catch(() => ({}));
-        throw new Error(d.message || 'Login failed');
-      }
-      const d = await res.json();
-      localStorage.setItem('auth_token', d.token ?? '');
-      navigate('/');
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  }
+    dispatch(loginAsync({ email, password }));
+  };
 
   return (
-    <div className="flex h-screen font-sans">
-      <div className="w-2/5 flex flex-col justify-center px-16 text-white" style={{ background: '#1428A0' }}>
-        <h1 className="text-3xl font-bold">Smart Monitoring System</h1>
-        <p className="mt-4 text-sm opacity-75">Sign in to access your workspace.</p>
-      </div>
-      <div className="flex-1 flex items-center justify-center bg-slate-50">
-        <form onSubmit={handleSubmit} className="w-96 space-y-5">
+    <div className="flex min-h-screen items-center justify-center bg-slate-100 font-sans">
+      <div className="w-full max-w-sm px-4">
+        {/* App brand */}
+        <div className="mb-6 flex items-center gap-3">
+          <div className="flex size-10 items-center justify-center rounded-[10px] bg-gradient-to-br from-[#1428A0] to-[#091455] font-[Sora] text-xs font-bold text-white">
+            SMS
+          </div>
           <div>
-            <h2 className="text-2xl font-bold text-gray-900">Sign in</h2>
-            <p className="text-sm text-gray-500 mt-1">Enter your credentials to continue</p>
+            <p className="font-[Sora] text-base font-bold text-slate-900">Smart Monitoring</p>
+            <p className="text-xs text-slate-500">TVPlus Platform</p>
           </div>
-          {error && (
-            <Alert variant="destructive">
-              <AlertDescription>{error}</AlertDescription>
-            </Alert>
-          )}
-          <div className="space-y-1">
-            <Label htmlFor="email">Email</Label>
-            <Input id="email" type="email" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} required placeholder="you@example.com" />
-          </div>
-          <div className="space-y-1">
-            <Label htmlFor="password">Password</Label>
-            <Input id="password" type="password" value={form.password} onChange={e => setForm(f => ({ ...f, password: e.target.value }))} required placeholder="••••••••" />
-          </div>
-          <Button type="submit" disabled={loading} className="w-full">
-            {loading ? 'Signing in…' : 'Sign in'}
-          </Button>
-        </form>
+        </div>
+
+        <Card>
+          <CardHeader className="pb-4">
+            <CardTitle className="text-xl">Sign in</CardTitle>
+            <CardDescription>Enter your credentials to access SMS</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="space-y-1.5">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={e => setEmail(e.target.value)}
+                  placeholder="alice@tvplus.com"
+                  required
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="password">Password</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                  placeholder="password123"
+                  required
+                />
+              </div>
+
+              {error && (
+                <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">{error}</p>
+              )}
+
+              <Button type="submit" className="w-full" disabled={loading}>
+                {loading ? 'Signing in…' : 'Sign In'}
+              </Button>
+            </form>
+
+            <p className="mt-4 text-center text-xs text-slate-400">
+              Demo: <span className="font-medium">alice@tvplus.com</span> / <span className="font-medium">password123</span>
+            </p>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

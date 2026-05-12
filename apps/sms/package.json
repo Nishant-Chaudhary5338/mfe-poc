@@ -10,21 +10,26 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@reduxjs/toolkit": "^2.8.2",
     "@repo/auth": "workspace:*",
     "@repo/shared-ui": "workspace:*",
+    "@repo/ui": "workspace:*",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
+    "react-redux": "^9.2.0",
     "react-router-dom": "^7.6.0",
     "zod": "^3.23.8"
   },
   "devDependencies": {
-    "@originjs/vite-plugin-federation": "^1.4.1",
+    "@module-federation/vite": "^1.15.4",
+    "@repo/tailwind-config": "workspace:*",
+    "@tailwindcss/vite": "^4.1.5",
     "@types/react": "^19.1.0",
     "@types/react-dom": "^19.1.0",
     "@vitejs/plugin-react": "^6.0.1",
+    "tailwindcss": "^4.1.5",
     "typescript": "^5.8.3",
     "vite": "^8.0.0",
-    "@tailwindcss/vite": "^4.1.5",
-    "tailwindcss": "^4.1.5"
+    "vite-plugin-css-injected-by-js": "^5.0.1"
   }
 }

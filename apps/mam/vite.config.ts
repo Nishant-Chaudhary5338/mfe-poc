@@ -1,11 +1,13 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
-import federation from '@originjs/vite-plugin-federation';
+import { federation } from '@module-federation/vite';
+import cssInjectedByJsPlugin from 'vite-plugin-css-injected-by-js';
 
 export default defineConfig({
   base: 'http://localhost:3004/',
   plugins: [
+    cssInjectedByJsPlugin(),
     react(),
     tailwindcss(),
     federation({

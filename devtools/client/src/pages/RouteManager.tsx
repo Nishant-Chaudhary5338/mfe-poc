@@ -74,7 +74,7 @@ export default function RouteManager() {
       setResult(data);
       if (data.success) {
         setExistingRoutes(r => [...r, routeName]);
-        toast.success('Route added', `${routeName} added to ${selectedApp}`);
+        toast.success('Page added', `${routeName} added to ${selectedApp}`);
         setRouteName('');
         setRoutePath('');
         setEndpoint('');
@@ -82,7 +82,7 @@ export default function RouteManager() {
         setDescription('');
         setShowCode(false);
       } else {
-        toast.error('Failed to add route', data.error ?? 'Unknown error');
+        toast.error('Failed to add page', data.error ?? 'Unknown error');
       }
     } catch (e) {
       setResult({ success: false, error: String(e) });
@@ -101,7 +101,7 @@ export default function RouteManager() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Delete failed');
-      toast.success('Route deleted', `${routeName} removed from ${selectedApp}`);
+      toast.success('Page deleted', `${routeName} removed from ${selectedApp}`);
       setExistingRoutes(r => r.filter(x => x !== routeName));
     } catch (err) {
       toast.error('Delete failed', String(err));
@@ -120,12 +120,12 @@ export default function RouteManager() {
     <div>
       <div style={{ marginBottom: 32, display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16 }}>
         <div>
-          <h1 style={{ fontFamily: 'var(--font-head)', fontSize: 28, fontWeight: 800, color: 'var(--text)', margin: 0, letterSpacing: '-0.02em' }}>Route Manager</h1>
-          <p style={{ color: 'var(--muted)', fontSize: 14, marginTop: 6 }}>Add new routes to existing plugins</p>
+          <h1 style={{ fontFamily: 'var(--font-head)', fontSize: 28, fontWeight: 800, color: 'var(--text)', margin: 0, letterSpacing: '-0.02em' }}>New Page</h1>
+          <p style={{ color: 'var(--muted)', fontSize: 14, marginTop: 6 }}>Add a new page to an existing app — generates the file and wires it up automatically</p>
         </div>
         {isReadOnly && (
           <span style={{ fontSize: 11, fontWeight: 600, padding: '5px 12px', borderRadius: 8, background: '#FFFBEB', color: '#92400E', border: '1px solid #FDE68A', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: 6 }}>
-            🔒 Read-only — cannot add routes
+            🔒 Read-only — cannot add pages
           </span>
         )}
       </div>
@@ -160,13 +160,13 @@ export default function RouteManager() {
             </div>
           </div>
 
-          {/* Add route form */}
+          {/* Add page form */}
           {selectedApp && (
             <div style={{ background: 'var(--card)', borderRadius: 12, padding: 24, border: '1px solid var(--border)' }}>
               <h2 style={{ fontFamily: 'var(--font-head)', fontSize: 16, fontWeight: 700, color: 'var(--text)', marginBottom: 16 }}>New Route</h2>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                 <div>
-                  <label style={labelStyle}>Route Name</label>
+                  <label style={labelStyle}>Page Name</label>
                   <input style={inputStyle} placeholder="e.g. Articles" value={routeName} onChange={e => setRouteName(e.target.value)} />
                 </div>
                 <div>
@@ -209,7 +209,7 @@ export default function RouteManager() {
                     background: loading ? 'var(--border)' : color,
                     color: 'white', border: 'none', cursor: loading ? 'not-allowed' : 'pointer',
                     fontFamily: 'var(--font-head)',
-                  }}>{loading ? 'Adding…' : endpoint ? 'Generate Table Route' : 'Add Route'}</button>
+                  }}>{loading ? 'Adding…' : endpoint ? 'Generate Table Page' : 'Add Page'}</button>
                 </PermissionGate>
               </div>
             </div>
@@ -250,7 +250,7 @@ export default function RouteManager() {
                       ) : (
                         <button
                           onClick={() => setConfirmDelete(r)}
-                          title="Delete route"
+                          title="Delete page"
                           style={{ width: 18, height: 18, borderRadius: '50%', border: 'none', background: 'transparent', color: color, fontSize: 13, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, opacity: 0.5, lineHeight: 1 }}
                         >×</button>
                       )}
@@ -278,7 +278,7 @@ export default function RouteManager() {
                 <div>
                   <div style={{ fontSize: 12, fontFamily: 'var(--font-mono)', color: 'var(--muted)', lineHeight: 1.8 }}>
                     <div style={{ color: '#059669' }}>+ {result.routeFile}</div>
-                    <div style={{ color: 'var(--muted)', marginTop: 4 }}>~ App.tsx patched — lazy import, NavLink, Route added</div>
+                    <div style={{ color: 'var(--muted)', marginTop: 4 }}>~ App.tsx patched — lazy import, NavLink, Page added</div>
                     <div style={{ color: 'var(--muted)' }}>~ Path: {result.path}</div>
                     {result.tableMode && <div style={{ color: '#059669', marginTop: 4 }}>⚡ Generated with API data table</div>}
                   </div>

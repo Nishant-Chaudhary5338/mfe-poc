@@ -31,8 +31,8 @@ const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
     label: 'Develop',
     items: [
       { id: 'dashboard', label: 'Dashboard',     icon: '▦' },
-      { id: 'scaffold',  label: 'New Plugin',    icon: '+',  roles: ['admin'] },
-      { id: 'routes',    label: 'Route Manager', icon: '⇄',  roles: ['admin', 'ops', 'editor'] },
+      { id: 'scaffold',  label: 'New App',      icon: '+',  roles: ['admin'] },
+      { id: 'routes',    label: 'New Page',      icon: '⇄',  roles: ['admin', 'ops', 'editor'] },
       { id: 'studio',    label: 'Code Studio',   icon: '⚡', roles: ['admin', 'ops', 'editor'] },
     ],
   },

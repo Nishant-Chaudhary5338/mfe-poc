@@ -1,78 +1,112 @@
-const COLOR = '#546BE8';
+import type { ColumnDef } from '@tanstack/react-table';
+import { Badge, Card, CardContent, CardHeader, CardTitle, DataTable, Skeleton } from '@repo/ui';
+import { useGetChecksQuery, useGetRulesQuery, type Check, type Rule } from '../store/api';
 
-const stats = [
-  { label: 'Checks Today', value: '284', sub: '↑ 12 vs yesterday', color: '#546BE8' },
-  { label: 'Pass Rate', value: '96.4%', sub: '274 passed · 10 failed', color: '#16a34a' },
-  { label: 'Avg Check Time', value: '2.8s', sub: 'P95: 8.4s', color: '#636B8A' },
-  { label: 'Assets Pending', value: '17', sub: 'in review queue', color: '#d97706' },
+const statusVariant = (s: string) =>
+  s === 'passed' ? 'default' : s === 'warning' ? 'secondary' : 'destructive';
+
+const severityVariant = (s: string) =>
+  s === 'critical' ? 'destructive' : s === 'high' ? 'secondary' : 'default';
+
+const checkColumns: ColumnDef<Check>[] = [
+  { accessorKey: 'asset',    header: 'Asset',    size: 200 },
+  { accessorKey: 'rule',     header: 'Rule',     size: 180 },
+  { accessorKey: 'operator', header: 'Operator' },
+  { accessorKey: 'score',    header: 'Score',    cell: ({ getValue }) => `${getValue()}/100` },
+  { accessorKey: 'runAt',    header: 'Run At',   cell: ({ getValue }) => new Date(getValue() as string).toLocaleString() },
+  {
+    accessorKey: 'status', header: 'Result',
+    cell: ({ getValue }) => {
+      const s = getValue() as string;
+      return <Badge variant={statusVariant(s)} className="capitalize">{s}</Badge>;
+    },
+  },
 ];
 
-const recent = [
-  { asset: 'UEFA_Final_2025_RAW.mp4', check: 'Loudness Normalisation', result: 'pass', grade: 'A', time: '2m ago' },
-  { asset: 'News_Bulletin_Morning.mxf', check: 'Black Frame Detection', result: 'pass', grade: 'A', time: '5m ago' },
-  { asset: 'Drama_S03E08_Master.mp4', check: 'Bitrate Compliance', result: 'fail', grade: 'F', time: '8m ago' },
-  { asset: 'Kids_S04E01_Rough.mov', check: 'Caption Validation', result: 'warning', grade: 'C', time: '12m ago' },
-  { asset: 'Sports_Highlights_Clip.mp4', check: 'Aspect Ratio Check', result: 'pass', grade: 'A', time: '15m ago' },
+const ruleColumns: ColumnDef<Rule>[] = [
+  { accessorKey: 'name',      header: 'Rule Name',  size: 200 },
+  { accessorKey: 'type',      header: 'Asset Type' },
+  { accessorKey: 'threshold', header: 'Threshold' },
+  {
+    accessorKey: 'severity', header: 'Severity',
+    cell: ({ getValue }) => {
+      const s = getValue() as string;
+      return <Badge variant={severityVariant(s)} className="capitalize">{s}</Badge>;
+    },
+  },
+  {
+    accessorKey: 'active', header: 'Active',
+    cell: ({ getValue }) => {
+      const active = getValue() as boolean;
+      return <Badge variant={active ? 'default' : 'secondary'}>{active ? 'Active' : 'Disabled'}</Badge>;
+    },
+  },
 ];
-
-const rColor: Record<string, string> = { pass: '#16a34a', fail: '#dc2626', warning: '#d97706' };
-const rBg: Record<string, string>    = { pass: '#f0fdf4', fail: '#fef2f2', warning: '#fffbeb' };
-const gColor: Record<string, string> = { A: '#16a34a', B: '#22c55e', C: '#d97706', D: '#ea580c', F: '#dc2626' };
 
 export default function Dashboard() {
+  const { data: checks = [], isLoading: checksLoading } = useGetChecksQuery();
+  const { data: rules  = [], isLoading: rulesLoading  } = useGetRulesQuery();
+
+  const passed  = checks.filter(c => c.status === 'passed').length;
+  const failed  = checks.filter(c => c.status === 'failed').length;
+  const warning = checks.filter(c => c.status === 'warning').length;
+  const avgScore = checks.length ? Math.round(checks.reduce((a, c) => a + c.score, 0) / checks.length) : 0;
+
   return (
-    <div>
-      <div style={{ marginBottom: 24 }}>
-        <h2 style={{ fontFamily: "'Sora', sans-serif", fontSize: 20, fontWeight: 700, color: '#0D1020', margin: 0 }}>QC Dashboard</h2>
-        <p style={{ color: '#8C94B0', fontSize: 13, marginTop: 4 }}>Automated quality checks across all TVPlus content</p>
+    <div className="space-y-6">
+      <div>
+        <h1 className="font-[Sora] text-2xl font-bold text-slate-900">QC Overview</h1>
+        <p className="mt-1 text-sm text-slate-500">Quality check results and active rule configuration</p>
       </div>
 
-      {/* Stat cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 28 }}>
-        {stats.map(s => (
-          <div key={s.label} style={{
-            background: 'white', borderRadius: 12, padding: '18px 20px',
-            border: '1px solid #ECEEF5', borderTop: `3px solid ${s.color}`,
-            boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
-          }}>
-            <div style={{ fontSize: 12, color: '#8C94B0', fontWeight: 500, marginBottom: 8 }}>{s.label}</div>
-            <div style={{ fontSize: 28, fontWeight: 800, color: s.color, fontFamily: "'Sora', sans-serif" }}>{s.value}</div>
-            <div style={{ fontSize: 12, color: '#8C94B0', marginTop: 4 }}>{s.sub}</div>
-          </div>
-        ))}
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+        {checksLoading ? Array.from({ length: 4 }).map((_, i) => (
+          <Card key={i}><CardContent className="pt-6"><Skeleton className="h-12 w-full" /></CardContent></Card>
+        )) : (
+          <>
+            <StatCard label="Total Checks" value={checks.length} color="text-slate-900" />
+            <StatCard label="Passed"       value={passed}        color="text-green-600" />
+            <StatCard label="Failed"       value={failed}        color="text-red-600" />
+            <StatCard label="Avg Score"    value={avgScore}      color="text-[#546BE8]" suffix="/100" />
+          </>
+        )}
       </div>
 
-      {/* Recent checks */}
-      <h3 style={{ fontSize: 14, fontWeight: 700, color: '#343A56', marginBottom: 14 }}>Recent Checks</h3>
-      <div style={{
-        background: 'white', borderRadius: 12, border: '1px solid #ECEEF5',
-        overflow: 'hidden', boxShadow: '0 1px 4px rgba(0,0,0,0.05)',
-      }}>
-        {recent.map((r, i) => (
-          <div key={r.asset + r.check} style={{
-            padding: '14px 20px', display: 'flex', alignItems: 'center', gap: 14,
-            borderBottom: i < recent.length - 1 ? '1px solid #F7F8FC' : 'none',
-          }}>
-            <div style={{
-              width: 36, height: 36, borderRadius: 8, flexShrink: 0,
-              background: gColor[r.grade] + '20',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontFamily: "'Sora', sans-serif", fontWeight: 800, fontSize: 16,
-              color: gColor[r.grade],
-            }}>{r.grade}</div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontWeight: 600, fontSize: 13, color: '#1E2235', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{r.asset}</div>
-              <div style={{ fontSize: 12, color: '#8C94B0', marginTop: 2 }}>{r.check}</div>
-            </div>
-            <span style={{ fontSize: 11, color: '#B5BACE' }}>{r.time}</span>
-            <span style={{
-              fontSize: 11, fontWeight: 600, padding: '3px 12px', borderRadius: 20,
-              background: rBg[r.result], color: rColor[r.result],
-              textTransform: 'capitalize',
-            }}>{r.result}</span>
-          </div>
-        ))}
-      </div>
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle className="text-base">Recent Checks</CardTitle>
+          {warning > 0 && <Badge variant="secondary">{warning} warnings</Badge>}
+        </CardHeader>
+        <CardContent>
+          {checksLoading
+            ? <Skeleton className="h-48 w-full" />
+            : <DataTable columns={checkColumns} data={checks} features={{ sorting: true, globalFilter: true, hoverable: true, striped: true }} />
+          }
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Active Rules</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {rulesLoading
+            ? <Skeleton className="h-32 w-full" />
+            : <DataTable columns={ruleColumns} data={rules} features={{ sorting: true, hoverable: true }} />
+          }
+        </CardContent>
+      </Card>
     </div>
+  );
+}
+
+function StatCard({ label, value, color, suffix = '' }: { label: string; value: number; color: string; suffix?: string }) {
+  return (
+    <Card>
+      <CardContent className="pt-6">
+        <p className="text-xs font-medium uppercase tracking-wide text-slate-500">{label}</p>
+        <p className={`mt-1 font-[Sora] text-3xl font-bold ${color}`}>{value}{suffix}</p>
+      </CardContent>
+    </Card>
   );
 }

@@ -1,6 +1,6 @@
 [
-  { "id": "sms", "label": "SMS", "url": "http://localhost:3001/assets/remoteEntry.js", "requiredRoles": ["admin", "ops", "viewer"] },
-  { "id": "qca", "label": "QCA", "url": "http://localhost:3002/assets/remoteEntry.js", "requiredRoles": ["admin", "ops", "viewer"] },
-  { "id": "cms", "label": "CMS", "url": "http://localhost:3003/assets/remoteEntry.js", "requiredRoles": ["admin", "editor", "viewer"] },
-  { "id": "mam", "label": "MAM", "url": "http://localhost:3004/assets/remoteEntry.js", "requiredRoles": ["admin", "editor", "viewer"] }
+  { "id": "sms", "label": "Smart Monitoring System", "url": "http://localhost:3001/remoteEntry.js", "requiredRoles": ["admin", "ops", "viewer"] },
+  { "id": "qca", "label": "QC Automation",           "url": "http://localhost:3002/remoteEntry.js", "requiredRoles": ["admin", "ops", "viewer"] },
+  { "id": "cms", "label": "Content Management System","url": "http://localhost:3003/remoteEntry.js", "requiredRoles": ["admin", "editor", "viewer"] },
+  { "id": "mam", "label": "Media Asset Management",   "url": "http://localhost:3004/remoteEntry.js", "requiredRoles": ["admin", "editor", "viewer"] }
 ]

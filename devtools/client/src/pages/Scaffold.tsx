@@ -78,15 +78,15 @@ export default function Scaffold() {
   return (
     <div>
       <div style={{ marginBottom: 32 }}>
-        <h1 style={{ fontFamily: 'var(--font-head)', fontSize: 28, fontWeight: 800, color: 'var(--text)', margin: 0, letterSpacing: '-0.02em' }}>New Plugin</h1>
-        <p style={{ color: 'var(--muted)', fontSize: 14, marginTop: 6 }}>Scaffold a new micro-frontend plugin in under 60 seconds</p>
+        <h1 style={{ fontFamily: 'var(--font-head)', fontSize: 28, fontWeight: 800, color: 'var(--text)', margin: 0, letterSpacing: '-0.02em' }}>New App</h1>
+        <p style={{ color: 'var(--muted)', fontSize: 14, marginTop: 6 }}>Create a new standalone app and add it to the portal in under 60 seconds</p>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
         {/* Form */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
           <div style={{ background: 'var(--card)', borderRadius: 12, padding: 24, border: '1px solid var(--border)' }}>
-            <h2 style={{ fontFamily: 'var(--font-head)', fontSize: 16, fontWeight: 700, color: 'var(--text)', marginBottom: 20 }}>Plugin Config</h2>
+            <h2 style={{ fontFamily: 'var(--font-head)', fontSize: 16, fontWeight: 700, color: 'var(--text)', marginBottom: 20 }}>App Configuration</h2>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
               <div>
                 <label style={labelStyle}>App ID (slug)</label>
@@ -158,7 +158,7 @@ export default function Scaffold() {
               border: 'none', cursor: (loading || !id || !label) ? 'not-allowed' : 'pointer',
               fontFamily: 'var(--font-head)', letterSpacing: '0.02em', opacity: (!id || !label) ? 0.5 : 1,
             }}
-          >{loading ? 'Creating Plugin...' : 'Create Plugin'}</button>
+          >{loading ? 'Creating App...' : 'Create App'}</button>
         </div>
 
         {/* Preview / Result */}
@@ -196,7 +196,7 @@ export default function Scaffold() {
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
                 <span style={{ fontSize: 20 }}>{result.success ? '✓' : '✗'}</span>
                 <h2 style={{ fontFamily: 'var(--font-head)', fontSize: 16, fontWeight: 700, color: result.success ? '#4ade80' : '#f87171', margin: 0 }}>
-                  {result.success ? 'Plugin Created!' : 'Error'}
+                  {result.success ? 'App Created!' : 'Error'}
                 </h2>
               </div>
               {result.success && result.files ? (

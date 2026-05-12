@@ -804,6 +804,49 @@ function seedMockData() {
       { id: 'i5', title: 'Push notification delays',        severity: 'medium',   status: 'resolved',      assignedTo: 'dave@tvplus.com', createdAt: '2026-04-15T14:00:00Z' },
       { id: 'i6', title: 'Ad insertion failure prime time', severity: 'high',     status: 'open',          assignedTo: 'alice@tvplus.com', createdAt: '2026-04-17T20:00:00Z' },
     ],
+    // SMS — system metrics & alerts
+    metrics: [
+      { id: 'm1', service: 'Stream CDN',       region: 'EU-West',  cpu: 42, memory: 61, latencyMs: 38,  uptime: 99.98, status: 'healthy'  },
+      { id: 'm2', service: 'Auth Service',      region: 'EU-West',  cpu: 78, memory: 82, latencyMs: 112, uptime: 99.91, status: 'degraded' },
+      { id: 'm3', service: 'EPG Processor',     region: 'EU-East',  cpu: 21, memory: 44, latencyMs: 55,  uptime: 99.99, status: 'healthy'  },
+      { id: 'm4', service: 'Ad Insertion',      region: 'US-East',  cpu: 55, memory: 70, latencyMs: 90,  uptime: 99.72, status: 'degraded' },
+      { id: 'm5', service: 'Recommendation AI', region: 'EU-West',  cpu: 91, memory: 88, latencyMs: 210, uptime: 98.50, status: 'critical' },
+      { id: 'm6', service: 'Metadata API',      region: 'US-West',  cpu: 18, memory: 35, latencyMs: 22,  uptime: 100,   status: 'healthy'  },
+    ],
+    alerts: [
+      { id: 'al1', rule: 'CPU > 90%',        service: 'Recommendation AI', severity: 'critical', firedAt: '2026-05-12T08:14:00Z', status: 'firing'    },
+      { id: 'al2', rule: 'Latency > 100ms',  service: 'Auth Service',      severity: 'warning',  firedAt: '2026-05-12T07:50:00Z', status: 'firing'    },
+      { id: 'al3', rule: 'Latency > 100ms',  service: 'Ad Insertion',      severity: 'warning',  firedAt: '2026-05-11T22:00:00Z', status: 'resolved'  },
+      { id: 'al4', rule: 'Uptime < 99%',     service: 'Recommendation AI', severity: 'critical', firedAt: '2026-05-10T14:00:00Z', status: 'resolved'  },
+    ],
+
+    // QCA — quality checks & rules
+    checks: [
+      { id: 'qc1', asset: 'promo-video.mp4',     rule: 'Bitrate check',       status: 'passed',  score: 98, runAt: '2026-05-12T06:00:00Z', operator: 'alice@tvplus.com' },
+      { id: 'qc2', asset: 'hero-banner.jpg',     rule: 'Resolution 1920×1080',status: 'passed',  score: 100,runAt: '2026-05-12T06:01:00Z', operator: 'alice@tvplus.com' },
+      { id: 'qc3', asset: 'intro-jingle.mp3',    rule: 'Audio loudness LUFS', status: 'failed',  score: 41, runAt: '2026-05-12T06:02:00Z', operator: 'bob@tvplus.com'   },
+      { id: 'qc4', asset: 'broken-upload.jpg',   rule: 'File integrity',      status: 'failed',  score: 0,  runAt: '2026-05-12T06:03:00Z', operator: 'bob@tvplus.com'   },
+      { id: 'qc5', asset: 'channel-guide.pdf',   rule: 'PDF/A compliance',    status: 'warning', score: 72, runAt: '2026-05-11T18:00:00Z', operator: 'carol@tvplus.com' },
+      { id: 'qc6', asset: 'thumbnail-sports.jpg',rule: 'Colour space sRGB',   status: 'passed',  score: 95, runAt: '2026-05-11T17:00:00Z', operator: 'carol@tvplus.com' },
+    ],
+    rules: [
+      { id: 'r1', name: 'Bitrate check',        type: 'video', threshold: '2000kbps min', active: true,  severity: 'critical' },
+      { id: 'r2', name: 'Resolution 1920×1080', type: 'image', threshold: 'exact match',  active: true,  severity: 'high'     },
+      { id: 'r3', name: 'Audio loudness LUFS',  type: 'audio', threshold: '-23 ± 1 LUFS', active: true,  severity: 'critical' },
+      { id: 'r4', name: 'File integrity',       type: 'any',   threshold: 'non-zero size', active: true, severity: 'critical' },
+      { id: 'r5', name: 'PDF/A compliance',     type: 'pdf',   threshold: 'PDF/A-1b',      active: false, severity: 'low'     },
+      { id: 'r6', name: 'Colour space sRGB',    type: 'image', threshold: 'sRGB profile',  active: true,  severity: 'medium'  },
+    ],
+
+    // MAM — transcoding jobs
+    jobs: [
+      { id: 'j1', asset: 'promo-video.mp4',   preset: 'HLS Adaptive',   status: 'completed', progress: 100, startedAt: '2026-05-12T05:00:00Z', duration: 142 },
+      { id: 'j2', asset: 'intro-jingle.mp3',  preset: 'AAC 192kbps',    status: 'running',   progress: 67,  startedAt: '2026-05-12T08:00:00Z', duration: null },
+      { id: 'j3', asset: 'hero-banner.jpg',   preset: 'WebP Optimise',  status: 'completed', progress: 100, startedAt: '2026-05-11T20:00:00Z', duration: 3   },
+      { id: 'j4', asset: 'broken-upload.jpg', preset: 'WebP Optimise',  status: 'failed',    progress: 0,   startedAt: '2026-05-11T19:00:00Z', duration: null },
+      { id: 'j5', asset: 'q2-report.xlsx',    preset: 'PDF Preview',    status: 'queued',    progress: 0,   startedAt: null,                  duration: null },
+    ],
+
     tokens: {},
   };
 }
@@ -877,9 +920,14 @@ function mockCrud(app, path, getCollection) {
   });
 }
 
-mockCrud(app, '/api/mock/articles', () => mockDb.articles);
-mockCrud(app, '/api/mock/assets',   () => mockDb.assets);
+mockCrud(app, '/api/mock/articles',  () => mockDb.articles);
+mockCrud(app, '/api/mock/assets',    () => mockDb.assets);
 mockCrud(app, '/api/mock/incidents', () => mockDb.incidents);
+mockCrud(app, '/api/mock/metrics',   () => mockDb.metrics);
+mockCrud(app, '/api/mock/alerts',    () => mockDb.alerts);
+mockCrud(app, '/api/mock/checks',    () => mockDb.checks);
+mockCrud(app, '/api/mock/rules',     () => mockDb.rules);
+mockCrud(app, '/api/mock/jobs',      () => mockDb.jobs);
 
 // ─── Dev Session (persisted in JSON) ─────────────────────────────────────────
 

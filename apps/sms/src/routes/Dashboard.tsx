@@ -1,92 +1,116 @@
-const services = [
-  { name: 'CDN Edge', uptime: '99.98%', latency: '12ms', status: 'healthy' },
-  { name: 'Ingest Pipeline', uptime: '99.95%', latency: '34ms', status: 'healthy' },
-  { name: 'Transcode Farm', uptime: '98.72%', latency: '210ms', status: 'degraded' },
-  { name: 'Playback API', uptime: '99.99%', latency: '8ms', status: 'healthy' },
-  { name: 'DRM Service', uptime: '99.91%', latency: '22ms', status: 'healthy' },
-  { name: 'Ad Insertion', uptime: '97.40%', latency: '45ms', status: 'warning' },
+import type { ColumnDef } from '@tanstack/react-table';
+import { Badge, Card, CardContent, CardHeader, CardTitle, DataTable, Skeleton } from '@repo/ui';
+import { useGetMetricsQuery, useGetAlertsQuery, type Metric, type Alert } from '../store/api';
+
+const statusVariant = (s: string) =>
+  s === 'healthy' ? 'default' : s === 'degraded' ? 'secondary' : 'destructive';
+
+const severityVariant = (s: string) =>
+  s === 'critical' ? 'destructive' : s === 'warning' ? 'secondary' : 'default';
+
+const metricColumns: ColumnDef<Metric>[] = [
+  { accessorKey: 'service',   header: 'Service',    size: 200 },
+  { accessorKey: 'region',    header: 'Region' },
+  { accessorKey: 'cpu',       header: 'CPU %',      cell: ({ getValue }) => `${getValue()}%` },
+  { accessorKey: 'memory',    header: 'Memory %',   cell: ({ getValue }) => `${getValue()}%` },
+  { accessorKey: 'latencyMs', header: 'Latency',    cell: ({ getValue }) => `${getValue()} ms` },
+  { accessorKey: 'uptime',    header: 'Uptime',     cell: ({ getValue }) => `${getValue()}%` },
+  {
+    accessorKey: 'status', header: 'Status',
+    cell: ({ getValue }) => {
+      const s = getValue() as string;
+      return <Badge variant={statusVariant(s)} className="capitalize">{s}</Badge>;
+    },
+  },
 ];
 
-const stats = [
-  { label: 'Active Streams', value: '184,231', delta: '+3.2%', up: true },
-  { label: 'Avg Bitrate', value: '4.8 Mbps', delta: '+0.4', up: true },
-  { label: 'Error Rate', value: '0.12%', delta: '-0.03%', up: false },
-  { label: 'P95 Latency', value: '94ms', delta: '+2ms', up: true },
+const alertColumns: ColumnDef<Alert>[] = [
+  { accessorKey: 'rule',      header: 'Rule',     size: 200 },
+  { accessorKey: 'service',   header: 'Service' },
+  {
+    accessorKey: 'severity', header: 'Severity',
+    cell: ({ getValue }) => {
+      const s = getValue() as string;
+      return <Badge variant={severityVariant(s)} className="capitalize">{s}</Badge>;
+    },
+  },
+  { accessorKey: 'firedAt', header: 'Fired At', cell: ({ getValue }) => new Date(getValue() as string).toLocaleString() },
+  {
+    accessorKey: 'status', header: 'Status',
+    cell: ({ getValue }) => {
+      const s = getValue() as string;
+      return <Badge variant={s === 'resolved' ? 'secondary' : 'destructive'} className="capitalize">{s}</Badge>;
+    },
+  },
 ];
-
-const statusColor: Record<string, string> = {
-  healthy: '#22c55e',
-  degraded: '#f59e0b',
-  warning: '#f97316',
-  critical: '#ef4444',
-};
-
-const statusBg: Record<string, string> = {
-  healthy: '#f0fdf4',
-  degraded: '#fffbeb',
-  warning: '#fff7ed',
-  critical: '#fef2f2',
-};
 
 export default function Dashboard() {
+  const { data: metrics = [], isLoading: metricsLoading } = useGetMetricsQuery();
+  const { data: alerts  = [], isLoading: alertsLoading  } = useGetAlertsQuery();
+
+  const healthy  = metrics.filter(m => m.status === 'healthy').length;
+  const degraded = metrics.filter(m => m.status === 'degraded').length;
+  const critical = metrics.filter(m => m.status === 'critical').length;
+  const firingAlerts = alerts.filter(a => a.status === 'firing').length;
+
   return (
-    <div>
-      <div style={{ marginBottom: 24 }}>
-        <h2 style={{ fontFamily: "'Sora', sans-serif", fontSize: 20, fontWeight: 700, color: '#0D1020', margin: 0 }}>
-          Infrastructure Overview
-        </h2>
-        <p style={{ color: '#8C94B0', fontSize: 13, marginTop: 4 }}>
-          Live health status across all TVPlus streaming services
-        </p>
+    <div className="space-y-6">
+      <div>
+        <h1 className="font-[Sora] text-2xl font-bold text-slate-900">Overview</h1>
+        <p className="mt-1 text-sm text-slate-500">Real-time service health across all regions</p>
       </div>
 
       {/* Stat cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 28 }}>
-        {stats.map(s => (
-          <div key={s.label} style={{
-            background: 'white', borderRadius: 12, padding: '18px 20px',
-            border: '1px solid #ECEEF5', boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
-          }}>
-            <div style={{ fontSize: 12, color: '#8C94B0', fontWeight: 500, marginBottom: 8 }}>{s.label}</div>
-            <div style={{ fontSize: 24, fontWeight: 700, color: '#0D1020', fontFamily: "'Sora', sans-serif" }}>{s.value}</div>
-            <div style={{ fontSize: 12, color: s.up ? '#16a34a' : '#dc2626', marginTop: 4, fontWeight: 500 }}>
-              {s.delta} vs last hour
-            </div>
-          </div>
-        ))}
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+        {metricsLoading ? Array.from({ length: 4 }).map((_, i) => (
+          <Card key={i}><CardContent className="pt-6"><Skeleton className="h-12 w-full" /></CardContent></Card>
+        )) : (
+          <>
+            <StatCard label="Total Services" value={metrics.length} color="text-slate-900" />
+            <StatCard label="Healthy"         value={healthy}        color="text-green-600" />
+            <StatCard label="Degraded"        value={degraded}       color="text-amber-600" />
+            <StatCard label="Critical"        value={critical}       color="text-red-600" />
+          </>
+        )}
       </div>
 
-      {/* Service health grid */}
-      <h3 style={{ fontSize: 14, fontWeight: 600, color: '#343A56', marginBottom: 14 }}>Service Health</h3>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
-        {services.map(s => (
-          <div key={s.name} style={{
-            background: 'white', borderRadius: 12, padding: 18,
-            border: '1px solid #ECEEF5',
-            borderLeft: `4px solid ${statusColor[s.status]}`,
-            boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
-          }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-              <div style={{ fontWeight: 600, fontSize: 14, color: '#1E2235' }}>{s.name}</div>
-              <span style={{
-                fontSize: 11, fontWeight: 600, padding: '3px 8px', borderRadius: 20,
-                background: statusBg[s.status], color: statusColor[s.status],
-                textTransform: 'uppercase', letterSpacing: '0.05em',
-              }}>{s.status}</span>
-            </div>
-            <div style={{ display: 'flex', gap: 20, marginTop: 12 }}>
-              <div>
-                <div style={{ fontSize: 11, color: '#8C94B0' }}>Uptime</div>
-                <div style={{ fontSize: 15, fontWeight: 700, color: '#0D1020' }}>{s.uptime}</div>
-              </div>
-              <div>
-                <div style={{ fontSize: 11, color: '#8C94B0' }}>Latency</div>
-                <div style={{ fontSize: 15, fontWeight: 700, color: '#0D1020' }}>{s.latency}</div>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
+      {/* Services table */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Service Health</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {metricsLoading
+            ? <Skeleton className="h-48 w-full" />
+            : <DataTable columns={metricColumns} data={metrics} features={{ sorting: true, globalFilter: true, hoverable: true, striped: true }} />
+          }
+        </CardContent>
+      </Card>
+
+      {/* Alerts table */}
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle className="text-base">Active Alerts</CardTitle>
+          {firingAlerts > 0 && <Badge variant="destructive">{firingAlerts} firing</Badge>}
+        </CardHeader>
+        <CardContent>
+          {alertsLoading
+            ? <Skeleton className="h-32 w-full" />
+            : <DataTable columns={alertColumns} data={alerts} features={{ sorting: true, hoverable: true }} />
+          }
+        </CardContent>
+      </Card>
     </div>
+  );
+}
+
+function StatCard({ label, value, color }: { label: string; value: number; color: string }) {
+  return (
+    <Card>
+      <CardContent className="pt-6">
+        <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">{label}</p>
+        <p className={`mt-1 font-[Sora] text-3xl font-bold ${color}`}>{value}</p>
+      </CardContent>
+    </Card>
   );
 }

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, type CSSProperties, Component, type ReactNode } from 'react';
 import { AuthProvider, useAuth } from '@repo/auth';
 import type { UserRole } from '@repo/auth';
 import RemoteLoader from './RemoteLoader.tsx';
@@ -14,24 +14,71 @@ export interface AppEntry {
 
 const appMeta: Record<string, { icon: string; desc: string; color: string }> = {
   sms: { icon: '💬', desc: 'Real-time infrastructure monitoring & alerting', color: '#1428A0' },
-  qca: { icon: '✅', desc: 'Automated quality control pipeline', color: '#546BE8' },
-  cms: { icon: '📝', desc: 'Programme & content publishing hub', color: '#0D1B70' },
-  mam: { icon: '🗂️', desc: 'Media asset library & transcoding', color: '#F4511E' },
+  qca: { icon: '✅', desc: 'Automated quality control pipeline',              color: '#546BE8' },
+  cms: { icon: '📝', desc: 'Programme & content publishing hub',              color: '#0D1B70' },
+  mam: { icon: '🗂️', desc: 'Media asset library & transcoding',              color: '#F4511E' },
 };
 
 const roleColors: Record<string, string> = {
   admin: '#1428A0', ops: '#059669', editor: '#F4511E', viewer: '#4A5170',
 };
 
+// ─── Error boundary for remote apps ──────────────────────────────────────────
+
+interface EBState { hasError: boolean; message: string }
+class RemoteErrorBoundary extends Component<{ appLabel: string; children: ReactNode }, EBState> {
+  state: EBState = { hasError: false, message: '' };
+
+  static getDerivedStateFromError(err: unknown): EBState {
+    return { hasError: true, message: err instanceof Error ? err.message : String(err) };
+  }
+
+  render() {
+    if (!this.state.hasError) return this.props.children;
+    return (
+      <div className="flex h-full min-h-screen items-start justify-center bg-slate-50 p-10">
+        <div className="w-full max-w-lg rounded-xl border border-red-200 bg-red-50 p-6">
+          <p className="mb-1 font-semibold text-red-700">Failed to render {this.props.appLabel}</p>
+          <p className="font-mono text-sm text-red-500">{this.state.message}</p>
+          <button
+            onClick={() => { this.setState({ hasError: false, message: '' }); }}
+            className="mt-4 rounded-lg border border-red-300 bg-white px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
+}
+
+// ─── Shell component ──────────────────────────────────────────────────────────
+
 function Shell() {
   const { user, logout } = useAuth();
   const [registry, setRegistry] = useState<AppEntry[]>([]);
-  const [activeApp, setActiveApp] = useState<AppEntry | null>(null);
 
-  // Back-to-portal bridge for remotes
-  useEffect(() => {
-    (globalThis as any).__tvplus_goHome = () => setActiveApp(null);
+  // Persist active app across refreshes
+  const [activeApp, setActiveApp] = useState<AppEntry | null>(() => {
+    try {
+      const s = sessionStorage.getItem('tvplus_active_app');
+      return s ? (JSON.parse(s) as AppEntry) : null;
+    } catch { return null; }
+  });
+
+  const openApp = useCallback((app: AppEntry) => {
+    setActiveApp(app);
+    sessionStorage.setItem('tvplus_active_app', JSON.stringify(app));
   }, []);
+
+  const goHome = useCallback(() => {
+    setActiveApp(null);
+    sessionStorage.removeItem('tvplus_active_app');
+  }, []);
+
+  useEffect(() => {
+    (globalThis as any).__tvplus_goHome = goHome;
+  }, [goHome]);
 
   // DevTools hot-reload
   useEffect(() => {
@@ -50,9 +97,18 @@ function Shell() {
     fetch('http://localhost:5001/api/registry')
       .catch(() => fetch('/registry.json'))
       .then(r => r.json())
-      .then((data: AppEntry[]) => setRegistry(data))
+      .then((data: AppEntry[]) => {
+        setRegistry(data);
+        // Rehydrate: if saved app is no longer in registry, clear it
+        const saved = sessionStorage.getItem('tvplus_active_app');
+        if (saved) {
+          const savedApp = JSON.parse(saved) as AppEntry;
+          const found = data.find((a: AppEntry) => a.id === savedApp.id);
+          if (!found || found.disabled) goHome();
+        }
+      })
       .catch(err => console.error('Failed to load registry:', err));
-  }, []);
+  }, [goHome]);
 
   if (!user) return <LoginPage />;
 
@@ -61,157 +117,111 @@ function Shell() {
     (!app.requiredRoles?.length || app.requiredRoles.includes(user.role))
   );
 
-  // Remote is active — full screen, no shell chrome
-  if (activeApp) return <RemoteLoader key={activeApp.id} app={activeApp} />;
+  // Active remote — full screen with error boundary
+  if (activeApp) {
+    const meta = appMeta[activeApp.id] ?? { icon: '📦', desc: '', color: '#546BE8' };
+    return (
+      <RemoteErrorBoundary key={activeApp.id} appLabel={activeApp.label}>
+        <RemoteLoader key={activeApp.id} app={activeApp} appColor={meta.color} />
+      </RemoteErrorBoundary>
+    );
+  }
 
   const hour = new Date().getHours();
   const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
+  const roleColor = roleColors[user.role] ?? '#4A5170';
 
   return (
-    <div style={{ height: '100vh', overflow: 'auto', background: '#F1F5F9', fontFamily: "'DM Sans', sans-serif" }}>
+    <div className="h-screen overflow-auto bg-slate-100 font-sans">
 
       {/* Sticky header */}
-      <header style={{
-        position: 'sticky', top: 0, zIndex: 10,
-        background: 'rgba(255,255,255,0.92)',
-        backdropFilter: 'blur(12px)',
-        borderBottom: '1px solid #E2E8F0',
-        padding: '0 40px', height: 60,
-        display: 'flex', alignItems: 'center', gap: 12,
-      }}>
-        {/* Brand */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div style={{
-            width: 34, height: 34, borderRadius: 9,
-            background: 'linear-gradient(135deg, #1428A0, #091455)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-          }}>
-            <span style={{ fontSize: 16 }}>📺</span>
+      <header className="sticky top-0 z-10 flex h-[60px] items-center gap-3 border-b border-slate-200 bg-white/[0.92] px-10 backdrop-blur-md">
+        <div className="flex items-center gap-2.5">
+          <div className="flex size-[34px] flex-shrink-0 items-center justify-center rounded-[9px] bg-gradient-to-br from-[#1428A0] to-[#091455]">
+            <span className="text-base">📺</span>
           </div>
-          <div style={{ fontFamily: "'Sora', sans-serif", fontSize: 15, fontWeight: 800, color: '#0F172A', letterSpacing: '-0.01em' }}>
-            TV<span style={{ color: '#F4511E' }}>Plus</span>
+          <div className="font-[Sora] text-[15px] font-extrabold tracking-tight text-slate-900">
+            TV<span className="text-[#F4511E]">Plus</span>
           </div>
         </div>
 
-        <div style={{ flex: 1 }} />
+        <div className="flex-1" />
 
-        {/* User chip */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div style={{
-            display: 'flex', alignItems: 'center', gap: 8,
-            padding: '6px 12px 6px 8px', borderRadius: 20,
-            background: '#F8FAFC', border: '1px solid #E2E8F0',
-          }}>
-            <div style={{
-              width: 26, height: 26, borderRadius: 7, flexShrink: 0,
-              background: (roleColors[user.role] ?? '#4A5170') + '20',
-              border: `1px solid ${roleColors[user.role] ?? '#4A5170'}40`,
-              display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12,
-            }}>
+        <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 pl-2 pr-3 py-1.5">
+            <div
+              className="flex size-[26px] flex-shrink-0 items-center justify-center rounded-[7px] text-xs"
+              style={{ background: roleColor + '20', border: `1px solid ${roleColor}40` }}
+            >
               {user.role === 'admin' ? '👑' : user.role === 'ops' ? '⚙️' : user.role === 'editor' ? '✏️' : '👁️'}
             </div>
             <div>
-              <div style={{ fontSize: 12, fontWeight: 600, color: '#0F172A', lineHeight: 1.2 }}>{user.name}</div>
-              <div style={{ fontSize: 10, fontWeight: 700, color: roleColors[user.role] ?? '#4A5170', textTransform: 'uppercase', letterSpacing: '0.06em', lineHeight: 1 }}>{user.role}</div>
+              <div className="text-xs font-semibold leading-tight text-slate-900">{user.name}</div>
+              <div className="text-[10px] font-bold uppercase leading-none tracking-wide" style={{ color: roleColor }}>
+                {user.role}
+              </div>
             </div>
           </div>
           <button
             onClick={logout}
-            style={{
-              padding: '7px 14px', borderRadius: 8,
-              background: 'transparent', border: '1px solid #E2E8F0',
-              color: '#64748B', fontSize: 12, fontWeight: 500, cursor: 'pointer',
-              fontFamily: "'DM Sans', sans-serif",
-              transition: 'all 0.12s',
-            }}
-            onMouseEnter={e => { e.currentTarget.style.background = '#F1F5F9'; e.currentTarget.style.color = '#0F172A'; }}
-            onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#64748B'; }}
+            className="cursor-pointer rounded-lg border border-slate-200 px-3.5 py-[7px] text-xs font-medium text-slate-500 transition-all duration-[120ms] hover:bg-slate-100 hover:text-slate-900"
           >
             Sign out
           </button>
         </div>
       </header>
 
-      {/* Landing content */}
-      <div style={{ padding: '40px 40px 60px' }}>
-        {/* Greeting */}
-        <div style={{ marginBottom: 36 }}>
-          <div style={{ fontFamily: "'Sora', sans-serif", fontSize: 28, fontWeight: 800, color: '#0F172A', letterSpacing: '-0.02em', marginBottom: 6 }}>
+      {/* Content */}
+      <div className="px-10 pt-10 pb-16">
+        <div className="mb-9">
+          <div className="mb-1.5 font-[Sora] text-[28px] font-extrabold tracking-tighter text-slate-900">
             {greeting}, {user.name.split(' ')[0]} 👋
           </div>
-          <div style={{ fontSize: 15, color: '#64748B' }}>
+          <div className="text-[15px] text-slate-500">
             {visibleApps.length > 0
               ? `You have access to ${visibleApps.length} plugin${visibleApps.length !== 1 ? 's' : ''}`
-              : 'No plugins assigned to your role'
-            }
+              : 'No plugins assigned to your role'}
           </div>
         </div>
 
-        {/* Plugin card grid */}
         {registry.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '60px 0', color: '#94A3B8', fontSize: 14 }}>
-            <div style={{ fontSize: 32, marginBottom: 12 }}>⏳</div>
-            Loading registry...
+          <div className="py-[60px] text-center text-sm text-slate-400">
+            <div className="mb-3 text-[32px]">⏳</div>
+            Loading registry…
           </div>
         ) : visibleApps.length === 0 ? (
-          <div style={{
-            padding: '32px 24px', borderRadius: 14, textAlign: 'center',
-            background: '#FFFBEB', border: '1px solid #FDE68A',
-            color: '#92400E', fontSize: 14,
-          }}>
+          <div className="rounded-2xl border border-amber-200 bg-amber-50 px-6 py-8 text-center text-sm text-amber-800">
             No plugins are assigned to your role (<strong>{user.role}</strong>). Contact your admin.
           </div>
         ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 18, maxWidth: 900 }}>
+          <div className="grid max-w-[900px] grid-cols-2 gap-[18px]">
             {visibleApps.map(app => {
               const meta = appMeta[app.id] ?? { icon: '📦', desc: '', color: '#546BE8' };
               return (
                 <div
                   key={app.id}
-                  style={{
-                    background: 'white',
-                    borderRadius: 16,
-                    border: '1px solid #E2E8F0',
-                    borderTop: `3px solid ${meta.color}`,
-                    padding: '24px 26px',
-                    cursor: 'pointer',
-                    transition: 'box-shadow 0.15s, transform 0.12s',
-                    boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
-                  }}
-                  onClick={() => setActiveApp(app)}
-                  onMouseEnter={e => {
-                    (e.currentTarget as HTMLElement).style.boxShadow = `0 8px 24px ${meta.color}18`;
-                    (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)';
-                  }}
-                  onMouseLeave={e => {
-                    (e.currentTarget as HTMLElement).style.boxShadow = '0 1px 3px rgba(0,0,0,0.06)';
-                    (e.currentTarget as HTMLElement).style.transform = 'translateY(0)';
-                  }}
+                  style={{ borderTopColor: meta.color } as CSSProperties}
+                  className="cursor-pointer rounded-2xl border border-slate-200 border-t-[3px] bg-white px-[26px] py-6 shadow-sm transition-all duration-150 hover:-translate-y-0.5 hover:shadow-xl"
+                  onClick={() => openApp(app)}
                 >
-                  {/* Card header */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 14 }}>
-                    <div style={{
-                      width: 48, height: 48, borderRadius: 12, flexShrink: 0,
-                      background: meta.color + '14',
-                      border: `1.5px solid ${meta.color}28`,
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      fontSize: 22,
-                    }}>{meta.icon}</div>
+                  <div className="mb-3.5 flex items-center gap-3.5">
+                    <div
+                      className="flex size-12 flex-shrink-0 items-center justify-center rounded-xl text-[22px]"
+                      style={{ background: meta.color + '14', border: `1.5px solid ${meta.color}28` }}
+                    >
+                      {meta.icon}
+                    </div>
                     <div>
-                      <div style={{ fontFamily: "'Sora', sans-serif", fontSize: 16, fontWeight: 700, color: '#0F172A', lineHeight: 1.2 }}>{app.label}</div>
-                      <div style={{ fontSize: 12, color: '#64748B', marginTop: 3 }}>{meta.desc}</div>
+                      <div className="font-[Sora] text-base font-bold leading-tight text-slate-900">{app.label}</div>
+                      <div className="mt-0.5 text-xs text-slate-500">{meta.desc}</div>
                     </div>
                   </div>
-
-                  {/* Open button */}
-                  <div style={{
-                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                    padding: '10px 14px', borderRadius: 9,
-                    background: meta.color + '0A',
-                    border: `1px solid ${meta.color}1E`,
-                  }}>
-                    <span style={{ fontSize: 13, fontWeight: 600, color: meta.color }}>Open plugin</span>
-                    <span style={{ fontSize: 16, color: meta.color }}>→</span>
+                  <div
+                    className="flex items-center justify-between rounded-[9px] px-3.5 py-2.5"
+                    style={{ background: meta.color + '0A', border: `1px solid ${meta.color}1E` }}
+                  >
+                    <span className="text-[13px] font-semibold" style={{ color: meta.color }}>Open plugin</span>
+                    <span className="text-base" style={{ color: meta.color }}>→</span>
                   </div>
                 </div>
               );

@@ -5,6 +5,7 @@
   "packageManager": "pnpm@10.32.1",
   "scripts": {
     "dev": "(lsof -ti:3000,3001,3002,3003,3004 | xargs kill -9 2>/dev/null || true) && pnpm build:mfe && (pnpm preview:remotes & pnpm dev:shell)",
+    "dev:hmr": "(lsof -ti:3000,3001,3002,3003,3004 | xargs kill -9 2>/dev/null || true) && turbo dev --filter=shell --filter=sms --filter=qca --filter=cms --filter=mam",
     "build": "turbo build",
     "preview": "pnpm --parallel -r preview",
     "build:mfe": "node scripts/dev-remotes.js build",

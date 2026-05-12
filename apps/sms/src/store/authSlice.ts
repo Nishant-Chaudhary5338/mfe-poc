@@ -1,6 +1,7 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 
 const TOKEN_KEY = 'sms_auth_token';
+const USER_KEY  = 'sms_auth_token_user';
 
 export interface AppUser { id: string; name: string; email: string; role: string }
 
@@ -9,6 +10,19 @@ interface AuthState {
   token: string | null;
   loading: boolean;
   error: string | null;
+}
+
+// Restore both token AND user from localStorage so state is fully consistent after
+// module re-init (page refresh, new browser tab, etc.)
+function restoreState(): Pick<AuthState, 'token' | 'user'> {
+  const token = localStorage.getItem(TOKEN_KEY);
+  if (!token) return { token: null, user: null };
+  try {
+    const user = JSON.parse(localStorage.getItem(USER_KEY) ?? 'null') as AppUser | null;
+    return { token, user };
+  } catch {
+    return { token, user: null };
+  }
 }
 
 export const loginAsync = createAsyncThunk(
@@ -24,42 +38,45 @@ export const loginAsync = createAsyncThunk(
       return rejectWithValue(err.error ?? 'Login failed');
     }
     const data = await res.json() as { token: string; user: AppUser };
+    // Persist both token and user so restoreState() works on next module init
     localStorage.setItem(TOKEN_KEY, data.token);
+    localStorage.setItem(USER_KEY, JSON.stringify(data.user));
     return data;
   }
 );
 
-const initialToken = localStorage.getItem(TOKEN_KEY);
-
 const authSlice = createSlice({
   name: 'auth',
   initialState: {
-    user: null,
-    token: initialToken,
+    ...restoreState(),
     loading: false,
     error: null,
   } as AuthState,
   reducers: {
     logout(state) {
-      state.user = null;
+      state.user  = null;
       state.token = null;
+      state.error = null;
       localStorage.removeItem(TOKEN_KEY);
+      localStorage.removeItem(USER_KEY);
+    },
+    clearError(state) {
+      state.error = null;
     },
   },
-  extraReducers: builder => {
-    builder
-      .addCase(loginAsync.pending, state => { state.loading = true; state.error = null; })
-      .addCase(loginAsync.fulfilled, (state, { payload }) => {
-        state.loading = false;
-        state.user = payload.user;
-        state.token = payload.token;
-      })
-      .addCase(loginAsync.rejected, (state, { payload }) => {
-        state.loading = false;
-        state.error = payload as string;
-      });
-  },
+  extraReducers: b => b
+    .addCase(loginAsync.pending,   s => { s.loading = true; s.error = null; })
+    .addCase(loginAsync.fulfilled, (s, { payload }) => {
+      s.loading = false;
+      s.user    = payload.user;
+      s.token   = payload.token;
+      s.error   = null;
+    })
+    .addCase(loginAsync.rejected,  (s, { payload }) => {
+      s.loading = false;
+      s.error   = payload as string ?? 'Login failed';
+    }),
 });
 
-export const { logout } = authSlice.actions;
+export const { logout, clearError } = authSlice.actions;
 export default authSlice.reducer;
